@@ -1,0 +1,61 @@
+{
+  "router": {
+    "url": "http://localhost:20128",
+    "password": ""
+  },
+  "browser": {
+    "cdpUrl": "http://127.0.0.1:9222",
+    "headless": false,
+    "defaultTimeout": 30000,
+    "connectionAttempts": 3,
+    "connectionRetryDelay": 2000
+  },
+  "database": {
+    "path": "~/.9router/data.db",
+    "backupEnabled": true,
+    "backupPath": "~/.9router/backups"
+  },
+  "automation": {
+    "maxAuthAttempts": 90,
+    "authPollInterval": 2000,
+    "defaultCooldown": 300000,
+    "minCooldown": 120000,
+    "maxCooldown": 600000,
+    "adaptiveCooldown": true
+  },
+  "antiDetection": {
+    "enabled": true,
+    "userAgentRotation": true,
+    "proxyRotation": true,
+    "fingerprintProtection": true,
+    "canvasNoiseEnabled": true,
+    "webglNoiseEnabled": true,
+    "audioNoiseEnabled": true,
+    "timezoneSpoof": false,
+    "localeSpoof": false,
+    "webrtcProtection": true
+  },
+  "security": {
+    "encryptCredentials": true,
+    "validateInputs": true,
+    "rateLimiting": {
+      "enabled": true,
+      "maxAccountsPerDay": 10,
+      "trackingWindow": 86400000
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "console": true,
+    "file": true,
+    "filePath": "./logs/app.log",
+    "maxFiles": 7,
+    "maxSize": "10m"
+  },
+  "monitoring": {
+    "enabled": true,
+    "metricsInterval": 60000,
+    "healthCheckInterval": 30000
+  }
+}

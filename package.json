@@ -1,0 +1,78 @@
+{
+  "name": "9router-kiro-automator",
+  "version": "5.0.0",
+  "description": "Automate AWS Builder ID OAuth linking to 9Router with advanced anti-detection and Gmail automation",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "9router-kiro": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "test": "node --test tests/**/*.test.js",
+    "test:unit": "node --test tests/unit/**/*.test.js",
+    "test:integration": "node --test tests/integration/**/*.test.js",
+    "test:watch": "node --test --watch tests/**/*.test.js",
+    "lint": "eslint src/ tests/ --ext .js",
+    "lint:fix": "eslint src/ tests/ --ext .js --fix",
+    "format": "prettier --write \"**/*.{js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,json,md}\"",
+    "chrome": "node scripts/launch-chrome.js",
+    "generate-key": "node src/cli/index.js generate-key",
+    "status": "node src/index.js status",
+    "logs": "node src/index.js logs",
+    "backup": "node src/index.js backup",
+    "docker:build": "docker build -t 9router-kiro-automator .",
+    "docker:run": "docker run -it --rm -v ~/.9router:/root/.9router 9router-kiro-automator",
+    "prepare": "node -e \"try { require('husky').install() } catch (e) {}\""
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "commander": "^11.1.0",
+    "sql.js": "^1.8.0",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.1",
+    "boxen": "^7.1.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "9router",
+    "kiro",
+    "oauth",
+    "automation",
+    "aws-builder-id",
+    "anti-detection",
+    "gmail-automation",
+    "playwright",
+    "aws",
+    "oauth2",
+    "browser-automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/9router-kiro-automator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/9router-kiro-automator/issues"
+  },
+  "homepage": "https://github.com/your-username/9router-kiro-automator#readme",
+  "author": "Your Name <your.email@example.com>",
+  "contributors": [
+    "Original Author <original@example.com>"
+  ],
+  "license": "MIT",
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"],
+    "*.{json,md}": ["prettier --write"]
+  }
+}

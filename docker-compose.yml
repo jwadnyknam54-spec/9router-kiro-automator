@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # 9Router-Kiro Automator
+  # =============================================================================
+  automator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 9router-kiro-automator:latest
+    container_name: 9router-kiro-automator
+
+    # Environment variables
+    env_file:
+      - .env
+
+    # Volumes for persistent data
+    volumes:
+      - automator-data:/root/.9router
+      - ./logs:/app/logs
+
+    # Network mode (host for Chrome CDP access)
+    network_mode: "host"
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    # Command (override with docker-compose run)
+    command: ["--help"]
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  automator-data:
+    driver: local
+
+# =============================================================================
+# Usage Examples:
+#
+# Build and start:
+#   docker-compose up -d
+#
+# Run automation:
+#   docker-compose run --rm automator run -e your.email@gmail.com -m 3
+#
+# Check status:
+#   docker-compose run --rm automator status
+#
+# View logs:
+#   docker-compose run --rm automator logs
+#
+# Create backup:
+#   docker-compose run --rm automator backup
+#
+# Stop and remove:
+#   docker-compose down
+#
+# Stop and remove with volumes:
+#   docker-compose down -v
+#
+# View logs:
+#   docker-compose logs -f automator
+# =============================================================================
