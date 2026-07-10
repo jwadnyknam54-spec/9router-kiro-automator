@@ -78,15 +78,26 @@ export class AWSAutomator {
       }
 
       logger.info('📧 Waiting for verification code email (3 min timeout)');
-      logger.warn('💡 TIP: Login to Gmail if needed - you have 2 minutes for login');
-      logger.warn('💡 Then the system will scan for the verification email');
+      logger.warn('');
+      logger.warn('💡 TIPS:');
+      logger.warn('   • Make sure you\'re logged into Gmail in the browser');
+      logger.warn('   • The system will auto-refresh and scan for AWS emails');
+      logger.warn('   • If auto-read fails, you can enter the code manually');
+      logger.warn('   • Check your Gmail inbox/spam for emails from AWS');
+      logger.warn('');
 
       let verificationCode;
       try {
         verificationCode = await this.gmail.getLatestVerificationCode(180000, true);
       } catch (err) {
         logger.error('Failed to get verification code:', err.message);
-        throw new Error('Verification code retrieval failed: ' + err.message);
+        logger.error('');
+        logger.error('Common issues:');
+        logger.error('  • Gmail not logged in - login manually in the browser');
+        logger.error('  • Email delayed - wait a few more minutes and check manually');
+        logger.error('  • Email in spam folder - check Gmail spam/promotions');
+        logger.error('  • Wrong email format - verify the email address is correct');
+        throw new Error('Verification code retrieval failed. Check Gmail manually. Error: ' + err.message);
       }
 
       if (!verificationCode) {

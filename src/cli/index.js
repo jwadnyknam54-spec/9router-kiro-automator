@@ -9,8 +9,8 @@ const program = new Command();
 
 program
   .name('9router-automator')
-  .version('4.0.0')
-  .description('9Router-Kiro OAuth Automator with Enhanced Anti-Detection');
+  .version('5.0.0')
+  .description('9Router-Kiro OAuth Automator with Enhanced Anti-Detection and AI-Powered Setup');
 
 program
   .command('run')
@@ -167,6 +167,31 @@ program
       console.error(chalk.red('\nError: ') + err.message);
       process.exit(1);
     }
+  });
+
+program
+  .command('doctor')
+  .description('Run system diagnostics and health checks')
+  .action(async () => {
+    try {
+      const { DoctorCommand } = await import('./doctor.js');
+      const doctor = new DoctorCommand();
+      await doctor.run();
+      process.exit(0);
+    } catch (err) {
+      logger.error('Doctor command failed', { error: err.message });
+      console.error(chalk.red('\nError: ') + err.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('setup')
+  .description('Run interactive setup wizard')
+  .action(() => {
+    console.log(chalk.cyan('\n🚀 Starting setup wizard...\n'));
+    console.log(chalk.gray('Run: node setup.js\n'));
+    process.exit(0);
   });
 
 export default program;

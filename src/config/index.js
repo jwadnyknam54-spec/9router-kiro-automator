@@ -129,18 +129,20 @@ class ConfigManager {
   validate() {
     const errors = [];
 
-    // Skip validation for utility commands
+    // Skip validation for utility commands that don't need full config
     const command = process.argv[2];
-    if (['generate-key', 'help', '--help', '-h', '--version', '-v'].includes(command)) {
+    const utilityCommands = ['generate-key', 'help', '--help', '-h', '--version', '-v', 'status', 'logs', 'backup'];
+    if (utilityCommands.includes(command)) {
       return;
     }
 
     if (!this.config.router.password && !process.env.ROUTER_PASSWORD) {
-      errors.push('Router password is required. Set ROUTER_PASSWORD environment variable.');
+      errors.push('Router password is required. Set ROUTER_PASSWORD in .env file.');
     }
 
-    if (this.config.security.encryptCredentials && !this.config.security.encryptionKey) {
-      errors.push('Encryption key is required when credential encryption is enabled. Set ENCRYPTION_KEY environment variable.');
+    // Only require encryption key for 'run' command
+    if (command === 'run' && this.config.security.encryptCredentials && !this.config.security.encryptionKey) {
+      errors.push('Encryption key is required. Generate with: npm run generate-key');
     }
 
     if (this.config.automation.minCooldown > this.config.automation.maxCooldown) {

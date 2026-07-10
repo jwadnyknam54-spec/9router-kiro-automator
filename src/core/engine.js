@@ -51,11 +51,19 @@ export class AutomationEngine {
 
       this.printHeader(validated);
 
-      const limit = await this.checkRateLimit();
-      if (!limit.allowed) {
-        throw new Error(
-          `Rate limit exceeded. Reset in ${this.rateLimiter.getResetTimeString(limit.resetAt)}`
-        );
+      if (!validated.skipRateLimit) {
+        const limit = await this.checkRateLimit();
+        if (!limit.allowed) {
+          throw new Error(
+            `⚠️ Rate limit exceeded!\n\n` +
+            `You've reached the daily account creation limit (${config.get('security.rateLimiting.maxAccountsPerDay')} accounts).\n` +
+            `This helps prevent AWS abuse detection.\n\n` +
+            `Reset in: ${this.rateLimiter.getResetTimeString(limit.resetAt)}\n\n` +
+            `To bypass (not recommended): use --skip-rate-limit flag`
+          );
+        }
+      } else {
+        logger.warn('⚠️ Rate limit check skipped - AWS may detect automated activity!');
       }
 
       const variations = await this.generateEmailVariations(validated);

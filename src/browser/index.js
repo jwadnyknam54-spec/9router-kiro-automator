@@ -60,9 +60,17 @@ export class BrowserManager {
       error: lastError.message
     });
 
+    const troubleshooting = [
+      '1. Close all Chrome instances completely',
+      '2. Run: npm run chrome',
+      '3. Or manually: chrome.exe --remote-debugging-port=9222 --user-data-dir="chrome-debug"',
+      '4. Verify Chrome is listening: http://localhost:9222/json/version'
+    ].join('\n   ');
+
     throw new Error(
-      `Chrome CDP connection failed: ${lastError.message}\n\n` +
-      `Make sure Chrome is running with: chrome.exe --remote-debugging-port=9222 --user-data-dir="chrome-debug"`
+      `Chrome CDP connection failed after ${maxAttempts} attempts.\n\n` +
+      `Last error: ${lastError.message}\n\n` +
+      `Troubleshooting steps:\n   ${troubleshooting}`
     );
   }
 

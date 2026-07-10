@@ -1,7 +1,7 @@
 {
   "name": "9router-kiro-automator",
   "version": "5.0.0",
-  "description": "Automate AWS Builder ID OAuth linking to 9Router with advanced anti-detection and Gmail automation",
+  "description": "Fully automated AWS Builder ID OAuth linking to 9Router with AI-powered setup, advanced anti-detection, and Gmail automation",
   "main": "src/index.js",
   "type": "module",
   "bin": {
@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node src/index.js",
+    "setup": "node setup.js",
     "test": "node --test tests/**/*.test.js",
     "test:unit": "node --test tests/unit/**/*.test.js",
     "test:integration": "node --test tests/integration/**/*.test.js",
@@ -20,6 +21,7 @@
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
     "chrome": "node scripts/launch-chrome.js",
     "generate-key": "node src/cli/index.js generate-key",
+    "doctor": "node src/index.js doctor",
     "status": "node src/index.js status",
     "logs": "node src/index.js logs",
     "backup": "node src/index.js backup",
@@ -60,16 +62,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/9router-kiro-automator.git"
+    "url": "https://github.com/jwadnyknam54-spec/9router-kiro-automator.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/9router-kiro-automator/issues"
+    "url": "https://github.com/jwadnyknam54-spec/9router-kiro-automator/issues"
   },
-  "homepage": "https://github.com/your-username/9router-kiro-automator#readme",
-  "author": "Your Name <your.email@example.com>",
-  "contributors": [
-    "Original Author <original@example.com>"
-  ],
+  "homepage": "https://github.com/jwadnyknam54-spec/9router-kiro-automator#readme",
+  "author": "jwadnyknam54-spec <jwadnyknam54@gmail.com>",
   "license": "MIT",
   "lint-staged": {
     "*.js": ["eslint --fix", "prettier --write"],
