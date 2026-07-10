@@ -72,10 +72,13 @@ export class AutomationEngine {
         throw new Error('No email variations generated');
       }
 
-      const actualCount = Math.min(variations.length, limit.remaining);
-      if (actualCount < variations.length) {
-        logger.warn(`Rate limit allows only ${actualCount}/${variations.length} accounts today`);
-        variations.splice(actualCount);
+      
+      if (!validated.skipRateLimit) {
+        const actualCount = Math.min(variations.length, limit.remaining);
+        if (actualCount < variations.length) {
+          logger.warn(`Rate limit allows only ${actualCount}/${variations.length} accounts today`);
+          variations.splice(actualCount);
+        }
       }
 
       logger.success(`Processing ${variations.length} accounts`);

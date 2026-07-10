@@ -38,31 +38,44 @@ export class AWSAutomator {
         await this.page.waitForTimeout(2000);
       }
 
+      // Fill email field first with specific selectors
       const emailInput = await this.findElement([
         'input[type="email"]',
         'input[name="email"]',
+        'input[id*="email" i]',
         'input[placeholder*="email" i]'
       ]);
 
-      if (emailInput) {
-        await emailInput.fill(email);
-        logger.info('Filled email field');
-        await this.page.waitForTimeout(500);
+      if (!emailInput) {
+        throw new Error('Email input field not found on AWS Builder ID registration page');
       }
 
+      await emailInput.clear();
+      await emailInput.fill(email);
+      logger.info('Filled email field', { email });
+      await this.page.waitForTimeout(500);
+
+      // Verify email was filled correctly
+      const emailValue = await emailInput.inputValue();
+      if (!emailValue || !emailValue.includes('@')) {
+        throw new Error('Email field validation failed - value does not contain @');
+      }
+
+      // Fill name field - avoid matching email field by excluding email-related attributes
       const nameInput = await this.findElement([
-        'input[name="name"]',
-        'input[placeholder*="name" i]',
-        'input[type="text"]'
+        'input[name="name"]:not([type="email"]):not([name*="email"])',
+        'input[id*="name" i]:not([type="email"]):not([id*="email"])',
+        'input[placeholder*="name" i]:not([type="email"]):not([placeholder*="email"])'
       ]);
 
-      if (nameInput && name) {
-        await nameInput.fill(name);
-        logger.info('Filled name field');
-      } else if (nameInput) {
-        const generatedName = this.generateRandomName();
-        await nameInput.fill(generatedName);
-        logger.info('Filled name with generated value', { name: generatedName });
+      if (nameInput) {
+        const displayName = name || this.generateRandomName();
+        await nameInput.clear();
+        await nameInput.fill(displayName);
+        logger.info('Filled name field', { name: displayName });
+        await this.page.waitForTimeout(500);
+      } else {
+        logger.warn('Name input field not found - may not be required');
       }
 
       const continueButton = await this.findElement([

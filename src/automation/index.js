@@ -97,7 +97,7 @@ export class KiroOAuthAutomator {
 
       this.awsAutomator = new AWSAutomator(regPage);
 
-      const regResult = await this.awsAutomator.autoRegister(email, 'User Name');
+      const regResult = await this.awsAutomator.autoRegister(email);
 
       if (regResult.password) {
         logger.info('Credentials saved for account', {
