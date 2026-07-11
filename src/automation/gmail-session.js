@@ -139,13 +139,22 @@ export class GmailSession {
   /**
    * Get latest verification code from Gmail
    * This refreshes the existing Gmail page instead of navigating away
+   * IMPORTANT: Only looks for emails from the last 5 minutes to avoid reading old codes
    */
   async getLatestVerificationCode(timeoutMs = 180000, allowManual = true) {
     if (!this.gmailPage) {
       throw new Error('Gmail session not initialized. Call initialize() first.');
     }
 
-    logger.info('📧 Scanning Gmail for verification code...');
+    // Record start time - we only want codes from emails received AFTER this point
+    const searchStartTime = Date.now();
+    const ACCEPTABLE_EMAIL_AGE_MS = 5 * 60 * 1000; // Only accept emails from last 5 minutes
+
+    logger.info('📧 Scanning Gmail for NEW verification code (last 5 min)...');
+    logger.info('⏰ Waiting 15 seconds for AWS to send the email...');
+
+    // CRITICAL: Wait for AWS to actually send the email before we start scanning
+    await this.gmailPage.waitForTimeout(15000);
 
     try {
       // Check if Gmail page is still alive
@@ -166,7 +175,7 @@ export class GmailSession {
       }
 
       const maxAttempts = Math.floor(timeoutMs / 5000);
-      logger.info(`🔍 Will check Gmail ${maxAttempts} times (every 5s)`);
+      logger.info(`🔍 Will check Gmail ${maxAttempts} times (every 5s) - looking for FRESH emails only`);
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -175,8 +184,8 @@ export class GmailSession {
           await this.gmailPage.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
           await this.gmailPage.waitForTimeout(2000);
 
-          // Try multiple strategies to find verification code
-          const code = await this.tryExtractCode();
+          // Try multiple strategies to find verification code from RECENT emails only
+          const code = await this.tryExtractCode(searchStartTime, ACCEPTABLE_EMAIL_AGE_MS);
 
           if (code) {
             logger.success(`✅ Verification code found: ${code}`);
@@ -217,17 +226,19 @@ export class GmailSession {
 
   /**
    * Try multiple strategies to extract verification code from Gmail
+   * @param {number} searchStartTime - Timestamp when search started (only look for emails after this)
+   * @param {number} acceptableAgeMs - Maximum age of email to accept (in milliseconds)
    */
-  async tryExtractCode() {
+  async tryExtractCode(searchStartTime, acceptableAgeMs) {
     // Strategy 1: Search for AWS emails
-    let code = await this.strategyGmailSearch();
+    let code = await this.strategyGmailSearch(searchStartTime, acceptableAgeMs);
     if (code) return code;
 
-    // Strategy 2: Parse visible email rows
-    code = await this.strategyParseEmailRows();
+    // Strategy 2: Parse visible email rows (most reliable for recent emails)
+    code = await this.strategyParseEmailRows(searchStartTime, acceptableAgeMs);
     if (code) return code;
 
-    // Strategy 3: DOM inspection
+    // Strategy 3: DOM inspection (last resort)
     code = await this.strategyDOMInspection();
     if (code) return code;
 
@@ -266,9 +277,9 @@ export class GmailSession {
     return null;
   }
 
-  async strategyParseEmailRows() {
+  async strategyParseEmailRows(searchStartTime, acceptableAgeMs) {
     try {
-      logger.debug('Strategy 2: Parsing email rows...');
+      logger.debug('Strategy 2: Parsing email rows (RECENT emails only)...');
 
       const emailSelectors = [
         'tr.zA', 'div[role="row"]', 'tr[role="row"]',
@@ -283,12 +294,13 @@ export class GmailSession {
 
       if (emails.length === 0) return null;
 
-      // Check first 10 emails
-      for (let i = 0; i < Math.min(10, emails.length); i++) {
+      // Check first 15 emails (but prioritize recent ones)
+      for (let i = 0; i < Math.min(15, emails.length); i++) {
         try {
           const email = emails[i];
           const emailText = await email.textContent().catch(() => '');
 
+          // Check if email is relevant (AWS verification)
           const isRelevant =
             emailText.toLowerCase().includes('aws') ||
             emailText.toLowerCase().includes('amazon') ||
@@ -296,20 +308,39 @@ export class GmailSession {
             emailText.toLowerCase().includes('verify') ||
             emailText.toLowerCase().includes('builder id');
 
-          if (isRelevant) {
-            await email.click();
-            await this.gmailPage.waitForTimeout(2500);
+          if (!isRelevant) continue;
 
-            const code = await this.extractCodeFromOpenEmail();
+          // CRITICAL: Check if email is RECENT (not old)
+          const isRecent =
+            emailText.includes('just now') ||
+            emailText.includes('minute ago') ||
+            emailText.includes('minutes ago') ||
+            emailText.match(/\d+\s*min/i) ||
+            emailText.includes('now') ||
+            // If no time indicator, it's at the top of inbox so probably recent
+            i < 3;
 
-            if (code) return code;
-
-            // Go back
-            await this.gmailPage.goBack().catch(() => {
-              this.gmailPage.goto('https://mail.google.com/mail/u/0/#inbox');
-            });
-            await this.gmailPage.waitForTimeout(1000);
+          if (!isRecent) {
+            logger.debug(`Skipping email ${i} - appears to be OLD (no recent timestamp)`);
+            continue;
           }
+
+          logger.debug(`Email ${i} appears RECENT - opening it...`);
+          await email.click();
+          await this.gmailPage.waitForTimeout(2500);
+
+          const code = await this.extractCodeFromOpenEmail();
+
+          if (code) {
+            logger.success(`✅ Found FRESH verification code from recent email`);
+            return code;
+          }
+
+          // Go back
+          await this.gmailPage.goBack().catch(() => {
+            this.gmailPage.goto('https://mail.google.com/mail/u/0/#inbox');
+          });
+          await this.gmailPage.waitForTimeout(1000);
         } catch (err) {
           continue;
         }
