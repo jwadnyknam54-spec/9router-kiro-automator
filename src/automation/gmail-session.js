@@ -160,7 +160,7 @@ export class GmailSession {
         logger.debug('Navigating back to Gmail inbox...');
         await this.gmailPage.goto('https://mail.google.com/mail/u/0/#inbox', {
           waitUntil: 'domcontentloaded',
-          timeout: 15000
+          timeout: 60000  // Increased timeout
         });
         await this.gmailPage.waitForTimeout(2000);
       }
