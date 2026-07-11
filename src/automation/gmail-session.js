@@ -36,10 +36,10 @@ export class GmailSession {
           antiDetection: true
         });
 
-        // Navigate to Gmail
+        // Navigate to Gmail (increased timeout for slow connections/heavy inboxes)
         await this.gmailPage.goto('https://mail.google.com/mail/u/0/#inbox', {
           waitUntil: 'domcontentloaded',
-          timeout: 30000
+          timeout: 90000  // 90 seconds - Gmail can be slow to load
         });
 
         await this.gmailPage.waitForTimeout(3000);
