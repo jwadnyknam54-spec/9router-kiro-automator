@@ -2,6 +2,7 @@ import config from '../config/index.js';
 import logger from '../utils/logger.js';
 import BrowserManager from '../browser/index.js';
 import AWSAutomator from './aws-automator.js';
+import GmailSession from './gmail-session.js';
 
 const ROUTER_URL = config.get('router.url');
 const ROUTER_PASSWORD = config.get('router.password');
@@ -13,6 +14,24 @@ export class KiroOAuthAutomator {
     this.browser = browserManager || new BrowserManager();
     this.routerUrl = ROUTER_URL;
     this.awsAutomator = null;
+    this.gmailSession = null;
+    this.initialized = false;
+  }
+
+  async initialize() {
+    if (this.initialized) return;
+
+    logger.info('Initializing OAuth automator...');
+
+    // Connect to browser
+    await this.browser.connect();
+
+    // Initialize persistent Gmail session (ONE-TIME login)
+    this.gmailSession = new GmailSession(this.browser);
+    await this.gmailSession.initialize();
+
+    this.initialized = true;
+    logger.success('OAuth automator initialized');
   }
 
   async handleRouterLogin(page) {
@@ -83,9 +102,11 @@ export class KiroOAuthAutomator {
     logger.info('Starting OAuth flow', { email, accountIndex });
 
     try {
-      await this.browser.connect();
+      // Ensure initialized (Gmail session ready)
+      await this.initialize();
+
+      // Only close background tabs, don't clear sessions (keeps AWS/Gmail login)
       await this.browser.closeBackgroundTabs();
-      await this.browser.clearSessions();
 
       logger.step(1, 3, 'AWS Builder ID Registration (Automated)');
 
@@ -95,7 +116,8 @@ export class KiroOAuthAutomator {
         profileId: profileId ? `${profileId}-reg` : null
       });
 
-      this.awsAutomator = new AWSAutomator(regPage);
+      // Pass the shared Gmail session to AWS automator
+      this.awsAutomator = new AWSAutomator(regPage, this.gmailSession);
 
       const regResult = await this.awsAutomator.autoRegister(email);
 
@@ -149,7 +171,8 @@ export class KiroOAuthAutomator {
       logger.step(3, 3, 'OAuth Handshake (Automated)');
 
       const authPage = await this.browser.context.newPage();
-      this.awsAutomator = new AWSAutomator(authPage);
+      // Reuse Gmail session for authorization too
+      this.awsAutomator = new AWSAutomator(authPage, this.gmailSession);
 
       const authSuccess = await this.awsAutomator.autoAuthorize(deviceCode);
 
@@ -219,7 +242,16 @@ export class KiroOAuthAutomator {
   }
 
   async close() {
+    // Close Gmail session first
+    if (this.gmailSession) {
+      await this.gmailSession.close();
+      this.gmailSession = null;
+    }
+
+    // Then close browser
     await this.browser.close();
+
+    this.initialized = false;
   }
 }
 

@@ -1,12 +1,11 @@
 import logger from '../utils/logger.js';
-import GmailHelper from './gmail-helper.js';
 import DebugRecorder from '../utils/debug-recorder.js';
 import { RetryManager } from '../utils/retry-manager.js';
 
 export class AWSAutomator {
-  constructor(page) {
+  constructor(page, gmailSession = null) {
     this.page = page;
-    this.gmail = new GmailHelper(page);
+    this.gmailSession = gmailSession; // Shared Gmail session, not per-page
     this.debugRecorder = new DebugRecorder(page);
     this.retryManager = new RetryManager({
       maxRetries: 3,
@@ -91,26 +90,18 @@ export class AWSAutomator {
       }
 
       logger.info('📧 Waiting for verification code email (3 min timeout)');
-      logger.warn('');
-      logger.warn('💡 TIPS:');
-      logger.warn('   • Make sure you\'re logged into Gmail in the browser');
-      logger.warn('   • The system will auto-refresh and scan for AWS emails');
-      logger.warn('   • If auto-read fails, you can enter the code manually');
-      logger.warn('   • Check your Gmail inbox/spam for emails from AWS');
-      logger.warn('');
+      logger.warn('   💡 The system will auto-scan your Gmail inbox');
 
       let verificationCode;
       try {
-        verificationCode = await this.gmail.getLatestVerificationCode(180000, true);
+        if (!this.gmailSession) {
+          throw new Error('Gmail session not initialized. This is a bug - please report it.');
+        }
+
+        verificationCode = await this.gmailSession.getLatestVerificationCode(180000, true);
       } catch (err) {
         logger.error('Failed to get verification code:', err.message);
-        logger.error('');
-        logger.error('Common issues:');
-        logger.error('  • Gmail not logged in - login manually in the browser');
-        logger.error('  • Email delayed - wait a few more minutes and check manually');
-        logger.error('  • Email in spam folder - check Gmail spam/promotions');
-        logger.error('  • Wrong email format - verify the email address is correct');
-        throw new Error('Verification code retrieval failed. Check Gmail manually. Error: ' + err.message);
+        throw new Error('Verification code retrieval failed: ' + err.message);
       }
 
       if (!verificationCode) {

@@ -40,6 +40,9 @@ export class AutomationEngine {
     this.browserManager = new BrowserManager();
     this.automator = new KiroOAuthAutomator(this.browserManager);
 
+    // Initialize the automator (connects browser + Gmail session)
+    await this.automator.initialize();
+
     logger.success('Automation engine initialized');
   }
 
@@ -51,8 +54,9 @@ export class AutomationEngine {
 
       this.printHeader(validated);
 
+      let limit = null;
       if (!validated.skipRateLimit) {
-        const limit = await this.checkRateLimit();
+        limit = await this.checkRateLimit();
         if (!limit.allowed) {
           throw new Error(
             `⚠️ Rate limit exceeded!\n\n` +
@@ -72,8 +76,8 @@ export class AutomationEngine {
         throw new Error('No email variations generated');
       }
 
-      
-      if (!validated.skipRateLimit) {
+      // Only apply rate limit if it was checked
+      if (limit) {
         const actualCount = Math.min(variations.length, limit.remaining);
         if (actualCount < variations.length) {
           logger.warn(`Rate limit allows only ${actualCount}/${variations.length} accounts today`);
@@ -85,7 +89,8 @@ export class AutomationEngine {
 
       await this.processAccounts(variations, validated);
 
-      await this.browserManager.close();
+      // Close automator (closes Gmail session + browser)
+      await this.automator.close();
 
       this.printSummary(startTime);
 
